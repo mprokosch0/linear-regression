@@ -4,6 +4,6 @@
 
 # include "csv.hpp"
 # include "functions.hpp"
-
+# include "Vec.hpp"
 
 #endif

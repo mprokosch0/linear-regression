@@ -32,6 +32,7 @@ enum cTypes
 	BIGINT,
 # endif
 	FLOAT,
+	DOUBLE,
 	DATE,
 	AUTO,
 	UNDT
@@ -45,6 +46,7 @@ using Cell = std::variant<
 	bigint,
 # endif
 	float,
+	double,
 	std::tm
 >;
 
@@ -93,6 +95,8 @@ void	columnType::determineCellType(Cell &cell)
 	# endif
 	else if (std::get_if<float>(&cell))
 		this->_type = FLOAT;
+	else if (std::get_if<float>(&cell))
+		this->_type = DOUBLE;
 	else if (std::get_if<std::tm>(&cell))
 		this->_type = DATE;
 	else
@@ -157,7 +161,7 @@ class csv
 		void	determineDelim(std::string &line);
 		void	fillLine(std::string &line);
 		void	insertData(std::string data, int numCol);
-		Cell	analyzeType(std::string &data);
+		Cell	analyzeType(const std::string &data);
 
 	public:
 		csv(std::string pathToFile, bool columnNames,
@@ -193,6 +197,8 @@ std::string	getColType(columnType const &col)
 	# endif
 	else if (col.getType() == FLOAT)
 		return "Float";
+	else if (col.getType() == DOUBLE)
+		return "Double";
 	else if (col.getType() == DATE)
 		return "DateTime";
 	return "Unknown";
@@ -210,6 +216,8 @@ std::string	getCType(cTypes const &cType)
 	# endif
 	else if (cType == FLOAT)
 		return "Float";
+	else if (cType == FLOAT)
+		return "Double";
 	else if (cType == DATE)
 		return "DateTime";
 	return "Unknown";

@@ -103,7 +103,7 @@ bool parse_tm(const std::string& s, Cell& out)
 	return true;
 }
 
-Cell csv::analyzeType(std::string &s)
+Cell csv::analyzeType(const std::string &s)
 {
 	if (s.empty())
 		return std::monostate();
@@ -124,8 +124,15 @@ Cell csv::analyzeType(std::string &s)
 
 	errno = 0;
 	double d = std::strtod(b, &end);
-	if (*end == '\0' && errno != ERANGE && std::isfinite(d))
-		return static_cast<float>(d);
+	if (end != b && *end == '\0' && errno != ERANGE && std::isfinite(d))
+	{
+		float f = static_cast<float>(d);
+		char buf[32];
+		std::snprintf(buf, sizeof(buf), "%.*g", 6, f);
+		if (std::strtod(buf, nullptr) == d)
+			return f;
+		return d;
+	}
 
 	Cell date;
 	if (parse_tm(s, date))
@@ -146,6 +153,8 @@ cTypes	resolveType(Cell const &cell)
 	# endif
 	else if (std::get_if<float>(&cell))
 		return FLOAT;
+	else if (std::get_if<double>(&cell))
+		return DOUBLE;
 	else if (std::get_if<std::tm>(&cell))
 		return DATE;
 	return UNDT;
@@ -173,6 +182,11 @@ void	csv::insertData(std::string data, int numCol)
 		{
 			sdata = static_cast<float>(std::get<int>(sdata));
 			cellType = FLOAT;
+		}
+		if (colType == DOUBLE && cellType == FLOAT)
+		{
+			sdata = static_cast<double>(std::get<int>(sdata));
+			cellType = DOUBLE;
 		}
 		if (colType != cellType && cellType != UNDT)
 			throw std::runtime_error("Data in line " + std::to_string(this->_data[numCol].size()) + " column " + std::to_string(numCol)
@@ -235,6 +249,10 @@ void	csv::allocate(size_t nbCols, size_t nbRows, std::vector<cTypes> types)
 
 				case FLOAT:
 					c = float();
+					break;
+				
+				case DOUBLE:
+					c = double();
 					break;
 				
 				case DATE:
@@ -344,6 +362,8 @@ cTypes typeToCType()
 #endif
 	else if constexpr (std::is_same_v<T, float>)
 		return FLOAT;
+	else if constexpr (std::is_same_v<T, double>)
+		return DOUBLE;
 	else if constexpr (std::is_same_v<T, std::tm>)
 		return DATE;
 	else
@@ -365,6 +385,69 @@ const std::vector<T> csv::getCol(size_t index) const
 		{
 			if (T const *v = std::get_if<T>(&col[i]))
 				res.push_back(*v);
+		}
+		return res;
+	}
+	else if (wantedType == DOUBLE && colType == FLOAT)
+	{
+		std::vector<T> res;
+		for (size_t i = 0; i < col.size(); i++)
+		{
+			if (float const *v = std::get_if<float>(&col[i]))
+				res.push_back(static_cast<double>(*v));
+		}
+		return res;
+	}
+	else if (wantedType == DOUBLE && colType == INT)
+	{
+		std::vector<T> res;
+		for (size_t i = 0; i < col.size(); i++)
+		{
+			if (int const *v = std::get_if<int>(&col[i]))
+				res.push_back(static_cast<double>(*v));
+		}
+		return res;
+	}
+	else if (wantedType == FLOAT && colType == INT)
+	{
+		std::vector<T> res;
+		for (size_t i = 0; i < col.size(); i++)
+		{
+			if (int const *v = std::get_if<int>(&col[i]))
+				res.push_back(static_cast<float>(*v));
+		}
+		return res;
+	}
+	else if (wantedType == INT && colType == FLOAT)
+	{
+		std::cout << "Warning: Column of float type truncked into a int column" << std::endl;
+		std::vector<T> res;
+		for (size_t i = 0; i < col.size(); i++)
+		{
+			if (float const *v = std::get_if<float>(&col[i]))
+				res.push_back(static_cast<int>(*v));
+		}
+		return res;
+	}
+	else if (wantedType == FLOAT && colType == DOUBLE)
+	{
+		std::cout << "Warning: Column of double type truncked into a float column" << std::endl;
+		std::vector<T> res;
+		for (size_t i = 0; i < col.size(); i++)
+		{
+			if (double const *v = std::get_if<double>(&col[i]))
+				res.push_back(static_cast<float>(*v));
+		}
+		return res;
+	}
+	else if (wantedType == INT && colType == DOUBLE)
+	{
+		std::cout << "Warning: Column of double type truncked into a int column" << std::endl;
+		std::vector<T> res;
+		for (size_t i = 0; i < col.size(); i++)
+		{
+			if (double const *v = std::get_if<double>(&col[i]))
+				res.push_back(static_cast<int>(*v));
 		}
 		return res;
 	}
