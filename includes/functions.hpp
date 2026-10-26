@@ -185,6 +185,11 @@ void	csv::insertData(std::string data, int numCol)
 		}
 		if (colType == DOUBLE && cellType == FLOAT)
 		{
+			sdata = static_cast<double>(std::get<float>(sdata));
+			cellType = DOUBLE;
+		}
+		if (colType == DOUBLE && cellType == INT)
+		{
 			sdata = static_cast<double>(std::get<int>(sdata));
 			cellType = DOUBLE;
 		}

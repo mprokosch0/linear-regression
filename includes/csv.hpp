@@ -95,7 +95,7 @@ void	columnType::determineCellType(Cell &cell)
 	# endif
 	else if (std::get_if<float>(&cell))
 		this->_type = FLOAT;
-	else if (std::get_if<float>(&cell))
+	else if (std::get_if<double>(&cell))
 		this->_type = DOUBLE;
 	else if (std::get_if<std::tm>(&cell))
 		this->_type = DATE;
@@ -216,7 +216,7 @@ std::string	getCType(cTypes const &cType)
 	# endif
 	else if (cType == FLOAT)
 		return "Float";
-	else if (cType == FLOAT)
+	else if (cType == DOUBLE)
 		return "Double";
 	else if (cType == DATE)
 		return "DateTime";
@@ -238,6 +238,8 @@ static std::string cellToString(Cell const &cell)
 		ss << *nb;
 	# endif
 	else if (auto f = std::get_if<float>(&cell))
+		ss << *f;
+	else if (auto f = std::get_if<double>(&cell))
 		ss << *f;
 	else if (auto date = std::get_if<std::tm>(&cell))
 		ss << std::put_time(date, "%Y-%m-%d %H:%M:%S");
